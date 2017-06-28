@@ -20,6 +20,7 @@ def getProvince(City):
 ####数据到数据库
 def dataToSQL():
 	lastTime = ''
+	now_time = '1900/00/00 00:00:00'
 	while True:
 
 		start_time = time.time()
@@ -33,15 +34,17 @@ def dataToSQL():
 		except:
 			lastTime = ''
 
-		#读取Json文件，注意这个是公测的API key
+		#读取Json文件
 		url = 'http://www.pm25.in/api/querys/all_cities.json?token=5j1znBVAsnSf5xQyNQyq'
 		resp = urllib2.urlopen(url)
 		data = json.loads(resp.read())
 		if 'error' in data:
-			print 'Sorry, API is not available in this hour.  '
+			print u'Sorry, API is not available for this hour'
 			print 'Try wait for %s seconds' % time_check
 			time.sleep(time_check)
 			continue
+		# #测试用
+		# data = pd.read_json(codecs.open('allAQI_new.json', 'r', 'utf-8'))
 
 		# Pandas dataframe 处理
 		column = [u'time_point', u'area', u'position_name', u'pm2_5', u'pm10', u'co',u'no2', u'o3', u'so2', u'o3_8h', u'pm2_5_24h', u'pm10_24h', u'co_24h', u'no2_24h', u'o3_24h', u'so2_24h',  u'o3_8h_24h', u'aqi', u'quality',  u'primary_pollutant', u'station_code',u'province']
@@ -74,20 +77,21 @@ def dataToSQL():
 			t = frame[frame['province'].isin([i])]
 			t.to_sql(i, con=engine, if_exists='append', chunksize=5000, index=False)
 
-		print DateTime, '   ', ("Processed in  %.2f seconds" % (time.time() - start_time))
+		processTime = time.time() - start_time
+		print DateTime, '   ', ("Processed in  %.2f seconds at" % processTime), now_time
 
-		time.sleep(time_check)
+		time.sleep(time_check-processTime)
 
 #######################################  Main Body #############################################
 if __name__ == "__main__":
 
-	#注意改数据库哦,还有上面的API key,和对应的北京那张表的数据库名
-	engine = create_engine('mysql+mysqldb://root:lgl521521@127.0.0.1:3306/test?charset=utf8', encoding='utf-8')
+	#数据库，还有上面的API key, 不要忘记上面北京那个表对应的数据库名
+	engine = create_engine('', encoding='utf-8')
 
 	with open('city_province.json') as f:
 		string = f.read()
 	provinces = json.loads(string)
 
-	time_check = 3660
+	time_check = 3600
 	dataToSQL()
 
