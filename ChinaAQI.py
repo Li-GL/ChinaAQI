@@ -16,7 +16,6 @@ def getProvince(City):
 				return province[u'text']
 			elif City in province[u'text']:
 				return province[u'text']
-
 ####数据到数据库
 def dataToSQL():
 	lastTime = ''
@@ -34,31 +33,38 @@ def dataToSQL():
 		except:
 			lastTime = ''
 
-		#读取Json文件
-		url = 'http://www.pm25.in/api/querys/all_cities.json?token=5j1znBVAsnSf5xQyNQyq'
-		resp = urllib2.urlopen(url)
-		data = json.loads(resp.read())
-		if 'error' in data:
-			print u'Sorry, API is not available for this hour'
-			print 'Try wait for %s seconds' % time_check
-			time.sleep(time_check)
-			continue
-		# #测试用
-		# data = pd.read_json(codecs.open('allAQI_new.json', 'r', 'utf-8'))
-
+		#读取PM25in Json文件
+		try:
+			url = 'http://www.pm25.in/api/querys/all_cities.json?token=5j1znBVAsnSf5xQyNQyq'
+			resp = urllib2.urlopen(url)
+			data = json.loads(resp.read())
+			if 'error' in data:
+				print 'Sorry, API is not available in this hour.', (' Wait for %s seconds' % time_check)
+				##记录丢失的数据
+				with open('missingDataLog.txt', 'a') as f:
+					missingTime = datetime.datetime.strptime(lastTime, '%Y/%m/%d %H:%M:%S') + datetime.timedelta(hours=1)
+					f.write(str(missingTime) + '\n')
+				##再等一小时吧
+				time.sleep(time_check)
+				continue
 		# Pandas dataframe 处理
-		column = [u'time_point', u'area', u'position_name', u'pm2_5', u'pm10', u'co',u'no2', u'o3', u'so2', u'o3_8h', u'pm2_5_24h', u'pm10_24h', u'co_24h', u'no2_24h', u'o3_24h', u'so2_24h',  u'o3_8h_24h', u'aqi', u'quality',  u'primary_pollutant', u'station_code',u'province']
-		frame = pd.DataFrame(data,columns=column)
-		modeTime = frame['time_point'].mode()[0]
-
+			column = [u'time_point', u'area', u'position_name', u'pm2_5', u'pm10', u'co',u'no2', u'o3', u'so2', u'o3_8h', u'pm2_5_24h', u'pm10_24h', u'co_24h', u'no2_24h', u'o3_24h', u'so2_24h',  u'o3_8h_24h', u'aqi', u'quality',  u'primary_pollutant', u'station_code',u'province']
+			frame = pd.DataFrame(data,columns=column)
+			modeTime = frame['time_point'].mode()[0]
+		except:
+			print 'Sorry, some error occurred.', 'Request again in 20 seconds'
+			time.sleep(20)
+			continue
 		#改下时间格式
 		DateTime = dateutil.parser.parse(modeTime)
 		DateTime = DateTime.strftime('%Y/%m/%d %H:%M:%S')
 		frame['time_point'] = DateTime
+
 		#如果时间没发生变化就过一段时间继续check
 		if DateTime == lastTime:
-			time.sleep(time_check)
-			print 'No change for the latest check'
+			print 'No change for the latest check at', now_time+'.', ('Wait for %s seconds' % time_check)
+			processTime = time.time() - start_time
+			time.sleep(time_check-processTime)
 			continue
 
 		#把对应省份加到dataframe
@@ -85,7 +91,7 @@ def dataToSQL():
 #######################################  Main Body #############################################
 if __name__ == "__main__":
 
-	#数据库，还有上面的API key, 不要忘记上面北京那个表对应的数据库名
+	#数据库名和上面的北京那个表的数据库不要忘记哦，还有上面的API key
 	engine = create_engine('', encoding='utf-8')
 
 	with open('city_province.json') as f:
