@@ -24,6 +24,7 @@ def dataToSQL():
 	now_time = '1900-00-00 00:00'
 	fail = 0
 	time_error = 0
+	time_compensate = 0
 	time_severerror = 0
 
 	while True:
@@ -56,15 +57,17 @@ def dataToSQL():
 			data = json.loads(resp.read())
 			#如果第一次请求失败尝试5min后再次请求
 			if len(data)<100 and fail == 0:
-				print 'Sorry, API error.', 'Try again in 2 min. ', now_time
+				print 'Sorry, API error.', 'Try again in 5 min. ', now_time
 				fail = fail + 1
-				time.sleep(120)
+				time_compensate = 300
+				time.sleep(300)
 				continue
 			# 如果第二次请求失败尝试5min后再次请求
 			if len(data) < 100 and fail == 1:
-				print 'Sorry, API error.', 'Try twice in 2 min. ', now_time
+				print 'Sorry, API error.', 'Try twice in 5 min. ', now_time
 				fail = fail + 1
-				time.sleep(120)
+				time_compensate = 600
+				time.sleep(300)
 				continue
 			#如果第三次还失败的话就加上刚才的时间等1小时
 			if len(data)<100 and fail == 2:
@@ -75,7 +78,8 @@ def dataToSQL():
 					missingTime = missingTime.strftime('%Y/%m/%d %H:00:00')
 					f.write(str(missingTime) + '\n')
 				fail = 0
-				time.sleep(time_check)
+				time_compensate = 0
+				time.sleep(time_check -600)
 				continue
 		# Pandas dataframe 处理
 			column = [u'time_point', u'area', u'position_name', u'pm2_5', u'pm10', u'co',u'no2', u'o3', u'so2', u'o3_8h', u'pm2_5_24h', u'pm10_24h', u'co_24h', u'no2_24h', u'o3_24h', u'so2_24h',  u'o3_8h_24h', u'aqi', u'quality',  u'primary_pollutant', u'station_code',u'province']
@@ -100,7 +104,7 @@ def dataToSQL():
 		if DateTime == lastTime:
 			print 'No change for the latest check at', now_time+'.', ('Wait for %s seconds' % time_check)
 			processTime = time.time() - start_time
-			time.sleep(time_check-processTime)
+			time.sleep(time_check-processTime-time_compensate)
 			continue
 
 		#要发往数据库的 31个省份
@@ -117,10 +121,11 @@ def dataToSQL():
 		processTime = time.time() - start_time
 		print DateTime, '   ', ("Processed in  %.2f seconds at" % processTime), now_time
 		#严格等待下一个时间间隔
-		time.sleep(time_check-processTime-time_error-time_severerror)
+		time.sleep(time_check-processTime-time_compensate-time_error-time_severerror)
 
 		#参数归0
 		fail = 0
+		time_compensate = 0
 		time_error = 0
 		time_severerror = 0
 #######################################  Main Body #############################################
