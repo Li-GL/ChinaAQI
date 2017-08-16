@@ -46,6 +46,8 @@ def dataToSQL():
 			qur_lastTime = "SELECT * FROM  chinaaqi.北京 where time_point between '%s' and '%s' order by time_point DESC" % (lastTime.encode('utf-8'), now_time)
 			alldata = pd.read_sql(qur_lastTime, con=engine)
 			lastTime = str(alldata['time_point'][0])
+			lastTime = datetime.datetime.strptime(lastTime, '%Y-%m-%d %H:%M:%S')
+			lastTime = lastTime.strftime('%Y/%m/%d %H:%M:%S')
 		except:
 			pass
 
