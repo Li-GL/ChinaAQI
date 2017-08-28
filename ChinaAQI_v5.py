@@ -33,7 +33,7 @@ def dataToSQL():
 
 		#如果服务器死掉，run again
 		try:
-			engine = create_engine('mysql+mysqldb://AerosolRoot:Passw0rd@139.159.221.133/chinaaqi?charset=utf8',encoding='utf-8')
+			########################engine = create_engine()##Only this line need to be edit
 		except:
 			print 'Server may not be available, try again in 1 min'
 			time.sleep(60)
@@ -42,14 +42,14 @@ def dataToSQL():
 
 		#读取过去最新的时间,没有数据库just pass
 		try:
-			now_time = datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-			qur_lastTime = "SELECT * FROM  chinaaqi.北京 where time_point between '%s' and '%s' order by time_point DESC" % (lastTime.encode('utf-8'), now_time)
+			now_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+			qur_lastTime = "SELECT * FROM  chinaaqi.上海 order by time_point DESC"
 			alldata = pd.read_sql(qur_lastTime, con=engine)
 			lastTime = str(alldata['time_point'][0])
-			lastTime = datetime.datetime.strptime(lastTime, '%Y-%m-%d %H:%M:%S')
-			lastTime = lastTime.strftime('%Y/%m/%d %H:%M:%S')
 		except:
 			pass
+			time.sleep(1)
+			print 'query time error'
 
 		#读取PM25in Json文件，遇到未知错误20秒后继续请求
 		try:
@@ -92,7 +92,7 @@ def dataToSQL():
 		try:
 			#改下dataframe时间格式
 			DateTime = dateutil.parser.parse(modeTime)
-			DateTime = DateTime.strftime('%Y/%m/%d %H:%M:%S')
+			DateTime = DateTime.strftime('%Y-%m-%d %H:%M:%S')
 			frame['time_point'] = DateTime
 			#把对应省份加到dataframe
 			allProvince = [getProvince(i) for i in frame['area']]
