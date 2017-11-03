@@ -75,7 +75,7 @@ def mainFn():
 
 		#如果服务器死掉，run again
 		try:
-			engine = create_engine(######################################################################)
+			engine = create_engine('mysql+mysqldb://AerosolRoot:Passw0rd@139.159.221.133/chinaaqi?charset=utf8',encoding='utf-8')
 		except:
 			print 'Server may not be available, try again in 1 min'
 			time.sleep(60)
@@ -128,7 +128,7 @@ def mainFn():
 			#如果数据没有变化就不发数据库，等待一段时间继续check
 			lastTime = datetime.datetime.strptime(lastTime, '%Y-%m-%d %H:%M:%S')
 			dateTime = datetime.datetime.strptime(dateTime, '%Y-%m-%d %H:%M:%S')
-			hours = (dateTime - lastTime).seconds / 3600
+			hours = (dateTime - lastTime).seconds / 3600 + (dateTime - lastTime).days*24
 			if hours==0:
 				print 'No change for the latest check at', nowTime+'.', ('Wait for %s seconds' % timeCheck)
 				processTime = time.time() - startTime
@@ -139,6 +139,7 @@ def mainFn():
 					compensateTime = lastTime + datetime.timedelta(hours=i)
 					frameNull = getNullDf(str(compensateTime))
 					toSQL(frameNull, engine)
+					recordLoss(str(compensateTime))
 					print 'Sending null data for missing hour    ', compensateTime
 			#按照省份发往数据库
 			toSQL(frame, engine)
@@ -148,7 +149,11 @@ def mainFn():
 			print dateTime, '   ', ("Processed in  %.2f seconds at" % processTime), nowTime
 			
 			#严格等待下一个时间间隔
-			time.sleep(timeCheck-processTime-timeError-timeServerError)
+			sleepTime = timeCheck-processTime-timeError-timeServerError
+			if sleepTime>0:
+				time.sleep(sleepTime)
+			else:
+				time.sleep(timeCheck)
 
 			#参数归0
 			fail,timeError,timeServerError = 0,0,0
