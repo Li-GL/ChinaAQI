@@ -10,6 +10,10 @@ import codecs
 
 ####每次check拿到对应的省份
 def getProvince(City):
+
+	with open('city_province.json') as f:
+		string = f.read()
+	provinces = json.loads(string)
 	for province in provinces:
 		for city in province[u'children']:
 			if City == city[u'text']:
@@ -65,10 +69,14 @@ def toSQL(df,engine):
 #######################################  主函数  #########################################
 def mainFn():
 
+
 	lastTime,nowTime = '','1900-00-00 00:00'
 	fail,timeError,timeServerError = 0,0,0
 
 	while True:
+
+		# 每小时check下数据
+		timeCheck = 3600
 
 		#计算处理时间
 		startTime = time.time()
@@ -86,6 +94,7 @@ def mainFn():
 		try:
 			nowTime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 			qur_lastTime = "SELECT * FROM  chinaaqi.上海 order by time_point DESC"
+			time.sleep(1)
 			allData = pd.read_sql(qur_lastTime, con=engine)
 			lastTime = str(allData['time_point'][0])
 		except:
@@ -164,12 +173,5 @@ def mainFn():
 
 #######################################  Run #############################################
 if __name__ == "__main__":
-
-	#先打开放到内存里即可
-	with open('city_province.json') as f:
-		string = f.read()
-	provinces = json.loads(string)
-	#每小时check下数据
-	timeCheck = 3600
 
 	mainFn()
