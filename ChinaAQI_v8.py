@@ -83,7 +83,7 @@ def mainFn():
 
 		#如果服务器死掉，run again
 		try:
-			engine = create_engine('mysql+mysqldb://AerosolRoot:Passw0rd@139.159.221.133/chinaaqi?charset=utf8',encoding='utf-8')
+			engine = create_engine('mysql+mysqldb://AerosolRoot:密码@139.159.221.133/chinaaqi?charset=utf8',encoding='utf-8')
 		except:
 			print 'Server may not be available, try again in 1 min'
 			time.sleep(60)
